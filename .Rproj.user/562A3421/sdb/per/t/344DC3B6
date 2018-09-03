@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(tidyverse)\nlibrary(readxl)\nlibrary(OECD)\n\nget.stats.oecd <- function(indicator) { \n\t# Function to download data from stats.oecd.org based on indicator using the fact that\n\t# Paths are common apart from indicator, so use paste0 to wrap rest of URL around indicator\n\tpaste0(\"https://stats.oecd.org/sdmx-json/data/DP_LIVE/.\",\n\t\t\t\t indicator,\n\t\t\t\t \".../OECD?contentType=csv&detail=code&separator=comma&csv-lang=en\") %>%\n\t\t# download file, requires the working directory to have a data sub directory\n\t\tdownload.file( . , destfile = \"./data/oecd_temp.csv\") \n\t# read file\n\tread_csv(\"./data/oecd_temp.csv\") \n}\n\n\n## I want a list of countries and ISO codes to join data from different sources\nlibrary(ISOcodes)\ncountries_tbl <- ISO_3166_1 %>% data.frame()  %>%\n\t               # The Common_name column has NAs for countries that don't have a different common name, \n\t\t\t\t\t\t\t\t # so use coalesce to create a Country variable that fills with values from Name\n\t               mutate(Country=coalesce(Common_name,Name))\n\t               \n# Get OECD (2018), Infrastructure investment (indicator). doi: 10.1787/b06ce3ad-en\ninfrainvest_tbl <- get.stats.oecd(\"INFRAINVEST\") %>%\n\t                 #rename(\"INFRAINVEST\"=\"Value\") %>%\n\t                 select(-\"Flag Codes\")\n\n# Get OECD (2018), Infrastructure maintenance (indicator). doi: 10.1787/c73dc965-en \ninframaint_tbl <- get.stats.oecd(\"INFRAMAINT\") %>%\n\t\t\t\t\t\t\t\t\t #rename(\"INFRAMAINT\"=\"Value\") %>%\n\t\t\t\t\t\t\t\t\t select(-\"Flag Codes\")\n\ntransport_data_tbl <- infrainvest_tbl %>% full_join(inframaint_tbl) %>% left_join(countries_tbl, by=c(\"LOCATION\"=\"Alpha_3\"))\n\n# Get data using OECD package\nlibrary(OECD)\ntransport_list <- get_datasets(\"transport\")\ngdp_list <- get_datasets(\"Gross domestic product\")\n## Get \ngdp_data <- get_dataset(\"SNA_TABLE1\")\n\ninv_maint_data <- get_dataset(\"ITF_INV-MTN_DATA\") %>% filter(grepl(\"RD\",VARIABLE)) \n\nroad_inv_maint_data <- inv_maint_data\t%>% \n\t                     # Filter: keep road data, but not total data or motorway data\n\t                     filter(grepl(\"RD\",VARIABLE), !grepl(\"INV-MTN\",VARIABLE), !grepl(\"MOTW\",VARIABLE)) %>%\n\t                     separate(VARIABLE, into = c(\"DROP\",\"INDICATOR\",\"SUBJECT\"),sep=\"-\") %>%\n\t                     select(-DROP)\n\n\ninv_maint_structure <- get_data_structure(\"ITF_INV-MTN_DATA\")\n\nroad_freight_data <- get_dataset(\"ITF_GOODS_TRANSPORT\") %>%\n\t# Filter: keep road data, but not total data or motorway data\n\tfilter(grepl(\"RD-TOT\",VARIABLE))\n\t        \nfreight_structure <- get_data_structure(\"ITF_GOODS_TRANSPORT\")\n\n\n# Get \nurl <- paste0(\"http://www.cesifo-group.de/ifoHome/facts/DICE/Infrastructure/Transportation/Road-Transport/\",\n              \"Competitiveness-of-ground-transport-sectors/fileBinary/Competitiveness-of-ground-transport-sectors.xls\")\ndownload.file( url , destfile = \"./data/ifo_temp.xls\")\n\ncompetitiveness_tbl <- read_excel(\"./data/ifo_temp.xls\", skip=2, col_names = FALSE) %>%\n\t                     rename(\"Country\"=\"X__1\")\n\n%>%\n\t                     mutate()\n",
+    "created" : 1535503539569.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1155072854",
+    "id" : "344DC3B6",
+    "lastKnownWriteTime" : 1535523825,
+    "last_content_update" : 1535523825513,
+    "path" : "~/Documents/GitHub/road_transport/road_transport.r",
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

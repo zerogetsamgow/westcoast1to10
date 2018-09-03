@@ -1,0 +1,9 @@
+{
+    "path" : "~/Documents/GitHub/state_income_paths/data",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
